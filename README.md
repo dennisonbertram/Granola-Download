@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/header.svg" alt="Granola Download" width="100%" />
+  <img src="assets/header.png" alt="Granola Download" width="100%" />
 </p>
 
 <h1 align="center">Granola Download</h1>
