@@ -39,13 +39,13 @@ pip install -r requirements.txt
 ./download_transcripts.command
 
 # Or run directly with your own config
-python3 download_transcripts.py ./my-transcripts
+python3 granola/download_transcripts.py ./my-transcripts
 ```
 
 ### Options
 
 ```
-python3 download_transcripts.py OUTPUT_DIR [options]
+python3 granola/download_transcripts.py OUTPUT_DIR [options]
 
   --overwrite          Re-download existing transcripts
   --batch-size N       Documents per batch request (default: 100)
@@ -60,21 +60,21 @@ python3 download_transcripts.py OUTPUT_DIR [options]
 For a complete export including AI-generated summaries and workspace/folder metadata:
 
 ```bash
-python3 main.py ./my-export
+python3 granola/main.py ./my-export
 ```
 
 ### Browse Your Data
 
 ```bash
 # List all your workspaces
-python3 list_workspaces.py
+python3 granola/list_workspaces.py
 
 # List all folders
-python3 list_folders.py
+python3 granola/list_folders.py
 
 # Filter documents by workspace or folder
-python3 filter_by_workspace.py ./my-export --list-workspaces
-python3 filter_by_folder.py ./my-export --folder-name "Sales"
+python3 granola/filter_by_workspace.py ./my-export --list-workspaces
+python3 granola/filter_by_folder.py ./my-export --folder-name "Sales"
 ```
 
 ## Output

@@ -89,7 +89,7 @@ print("config.json created")
 PY
 fi
 
-"$VENV_PY" download_transcripts.py "$OUTPUT_DIR" --folder-name "$FOLDER_NAME"
+"$VENV_PY" granola/download_transcripts.py "$OUTPUT_DIR" --folder-name "$FOLDER_NAME"
 
 echo ""
 echo "Done. Output: $OUTPUT_DIR"
