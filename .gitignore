@@ -20,5 +20,11 @@ build/
 # Configuration and secrets
 config.json
 
+# Personal transcript/output data
+transcripts_output/
+workspaces.json
+document_lists.json
+granola_api_response.json
+
 # Logs
 *.log

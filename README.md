@@ -37,6 +37,7 @@ Granola uses WorkOS for authentication with refresh token rotation.
 ## Implementation Files
 
 - `main.py` - Document fetching and conversion logic (includes workspace, folder, and batch fetching)
+- `download_transcripts.py` - Download transcripts only (includes shared docs via folder lists)
 - `token_manager.py` - OAuth token management and refresh
 - `list_workspaces.py` - List all available workspaces (organizations)
 - `list_folders.py` - List all document lists (folders)
@@ -395,6 +396,32 @@ This will:
 2. Fetch all document lists (folders) and save to `document_lists.json`
 3. Fetch all documents with workspace and folder information
 4. Save each document with metadata including `workspace_id`, `workspace_name`, and `folders`
+
+### Download Transcripts Only
+
+Download transcripts (including shared documents via folder lists):
+
+```bash
+python3 download_transcripts.py /path/to/output/directory
+```
+
+Optional flags:
+
+```bash
+python3 download_transcripts.py /path/to/output/directory --overwrite --batch-size 100 --page-size 100 --timeout 30 --folder-name date-title-id
+```
+
+### One-Click Download (macOS)
+
+Double-click `download_transcripts.command` to:
+- Create a local `.venv` if needed
+- Install requirements
+- Auto-generate `config.json` from Granola's `supabase.json` if missing
+- Download transcripts to `transcripts_output/`
+
+You can override defaults by setting environment variables before launching:
+- `OUTPUT_DIR` (default: `transcripts_output` in the repo)
+- `FOLDER_NAME` (default: `date-title-id`)
 
 ### List All Workspaces
 
