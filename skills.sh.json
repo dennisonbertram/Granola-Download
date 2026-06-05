@@ -1,0 +1,11 @@
+{
+  "$schema": "https://skills.sh/schema/skills.sh.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Granola Backup",
+      "description": "Back up, sync, and search your Granola meeting transcripts locally; refresh Granola's auto-rotating auth token.",
+      "skills": ["granola"]
+    }
+  ]
+}
