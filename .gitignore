@@ -29,3 +29,6 @@ granola_api_response.json
 
 # Logs
 *.log
+
+# macOS
+.DS_Store

@@ -28,6 +28,25 @@
 
 It will automatically authenticate, download all your transcripts, and save them to `transcripts_output/`.
 
+## One-Command Pull (recommended)
+
+Granola's auth tokens are single-use and rotate constantly, so a saved token
+goes stale between runs. `pull.py` sidesteps this by always re-extracting a
+fresh token from the live Granola app, then downloading and renaming in one go:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# Refresh token -> download new transcripts -> rename folders to readable names
+python3 pull.py                     # -> ./transcripts_output
+python3 pull.py ./my-transcripts    # custom output dir
+python3 pull.py -- --overwrite      # pass-through flags to the downloader
+```
+
+Folders are named `YYYY-MM-DD_HHMM_Subject_<id8>` (local time), so they sort
+chronologically. Re-running only downloads/renames what's new (idempotent).
+
 ## Manual Usage
 
 ```bash
@@ -76,6 +95,30 @@ python3 granola/list_folders.py
 python3 granola/filter_by_workspace.py ./my-export --list-workspaces
 python3 granola/filter_by_folder.py ./my-export --folder-name "Sales"
 ```
+
+## MCP Server (local stdio)
+
+Expose your transcript archive to MCP clients (e.g. Claude Code) as a local
+stdio server. It reads the local archive for search/get/list and can refresh it
+on demand. **Credentials are handled internally** — `sync` re-extracts a fresh
+token from the Granola app and downloads; no tool ever returns secrets.
+
+Tools: `list_meetings`, `search_transcripts`, `get_transcript`, `sync`,
+`archive_stats`.
+
+Runs under [uv](https://docs.astral.sh/uv/) (auto-fetches Python 3.11 + the
+`mcp` SDK — no extra venv to manage):
+
+```bash
+# Run standalone
+./mcp_server/run.sh
+
+# Register with Claude Code (user scope)
+claude mcp add granola --scope user -- /absolute/path/to/mcp_server/run.sh
+```
+
+The `sync` tool shells out to `pull.py` using the repo's `.venv`, so make sure
+the manual install above has been done once.
 
 ## Output
 
