@@ -5,149 +5,181 @@
 <h1 align="center">Granola Download</h1>
 
 <p align="center">
-  Back up your <a href="https://granola.ai">Granola</a> meeting notes and transcripts to your own machine.
+  Back up and search your <a href="https://granola.ai">Granola</a> meeting transcripts — from your AI agent or the command line.
 </p>
 
 ---
 
 ## Why?
 
-[Granola](https://granola.ai) is a fantastic AI meeting assistant — it captures transcripts, generates summaries, and organizes your notes beautifully. But your meeting data lives in Granola's cloud, and there's no built-in export.
+[Granola](https://granola.ai) captures great transcripts and notes, but your data
+lives in its cloud and there's no built-in export. **Your meetings are yours.**
+This tool downloads everything to your own machine so you can archive it, search
+it, and pipe it into your own workflows.
 
-**Your meetings are yours.** This tool lets you download everything — notes, transcripts, and metadata — so you have a local backup you control. Use it to:
+> **macOS only.** Requires the **Granola desktop app installed and logged in** —
+> the auth token is read (decrypted) straight from the app's local storage, so
+> there's nothing to configure.
 
-- Keep an offline archive of all your meetings
-- Pipe transcripts into your own workflows (Obsidian, search, analysis)
-- Have peace of mind that your data is safe regardless of what happens to any service
+---
 
-## Quick Start (macOS)
+## Install
 
-> Requires the Granola desktop app to be installed and logged in.
+### ⭐ Recommended: as an AI skill (`npx skills`)
 
-**Double-click `download_transcripts.command`** — that's it.
-
-It will automatically authenticate, download all your transcripts, and save them to `transcripts_output/`.
-
-## One-Command Pull (recommended)
-
-Granola's auth tokens are single-use and rotate constantly, so a saved token
-goes stale between runs. `pull.py` sidesteps this by always re-extracting a
-fresh token from the live Granola app, then downloading and renaming in one go:
+Install the `granola` skill into your AI agent (Claude Code, Codex, Cursor, …):
 
 ```bash
+npx skills add dennisonbertram/Granola-Download
+```
+
+Then just ask your agent — or use the slash command:
+
+```
+/granola                       # back up the latest transcripts
+/granola search "pricing"      # full-text search across all meetings
+/granola get "Weekly Sync"     # print one transcript (by title, date, or id)
+/granola stats                 # how many meetings, date range
+```
+
+The skill bootstraps everything on first run (clones this repo to a stable
+location and sets up its environment), refreshes your Granola token, and saves
+transcripts locally. Nothing else to set up.
+
+### Alternative: standalone (no AI agent)
+
+```bash
+git clone https://github.com/dennisonbertram/Granola-Download
+cd Granola-Download
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# Refresh token -> download new transcripts -> rename folders to readable names
-python3 pull.py                     # -> ./transcripts_output
-python3 pull.py ./my-transcripts    # custom output dir
-python3 pull.py -- --overwrite      # pass-through flags to the downloader
+python3 pull.py                 # back up to ./transcripts_output
 ```
 
-Folders are named `YYYY-MM-DD_HHMM_Subject_<id8>` (local time), so they sort
-chronologically. Re-running only downloads/renames what's new (idempotent).
+…or on macOS, **double-click `download_transcripts.command`** — it sets up the
+environment and runs the same backup.
 
-## Manual Usage
+---
+
+## The `pull` command
+
+`pull.py` is the one command that does everything, every time:
+
+1. **Refreshes your token.** Granola's tokens are single-use and rotate
+   constantly, so a saved one goes stale between runs. `pull.py` always
+   re-extracts a fresh token from the live app first — so it just works.
+2. **Downloads only what's new** (skips already-downloaded meetings).
+3. **Renames folders** to `YYYY-MM-DD_HHMM_Subject_<id8>` (local time) so they
+   sort chronologically. Idempotent — safe to run repeatedly.
 
 ```bash
-# Install
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-# Download transcripts (auto-extracts tokens from Granola app)
-./download_transcripts.command
-
-# Or run directly with your own config
-python3 granola/download_transcripts.py ./my-transcripts
+python3 pull.py                 # -> ./transcripts_output
+python3 pull.py ./my-archive    # custom output dir
+python3 pull.py -- --overwrite  # pass flags through to the downloader
 ```
 
-### Options
+---
 
-```
-python3 granola/download_transcripts.py OUTPUT_DIR [options]
+## MCP server (search your transcripts from any MCP client)
 
-  --overwrite          Re-download existing transcripts
-  --batch-size N       Documents per batch request (default: 100)
-  --page-size N        Documents per page (default: 100)
-  --folder-name MODE   Folder naming: id, title, title-id, date-title,
-                       date-title-id, date-id (default: id)
-  --timeout N          HTTP timeout in seconds (default: 30)
-```
+A local stdio MCP server exposes your archive to clients like Claude Code, the
+Claude desktop app, and Codex.
 
-### Full Export (Notes + Transcripts)
+**Tools:** `search_transcripts`, `list_meetings`, `get_transcript`, `sync`,
+`archive_stats`. Credentials are handled **internally** — `sync` refreshes the
+token and downloads; no tool ever returns secrets.
 
-For a complete export including AI-generated summaries and workspace/folder metadata:
+Runs under [uv](https://docs.astral.sh/uv/) (auto-fetches Python 3.11 + the `mcp`
+SDK — no extra setup):
 
 ```bash
-python3 granola/main.py ./my-export
+# Claude Code
+claude mcp add granola --scope user -- "$(pwd)/mcp_server/run.sh"
 ```
 
-### Browse Your Data
+<details>
+<summary>Claude desktop app · Codex</summary>
 
-```bash
-# List all your workspaces
-python3 granola/list_workspaces.py
+**Claude desktop** — add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
-# List all folders
-python3 granola/list_folders.py
-
-# Filter documents by workspace or folder
-python3 granola/filter_by_workspace.py ./my-export --list-workspaces
-python3 granola/filter_by_folder.py ./my-export --folder-name "Sales"
+```json
+{ "mcpServers": { "granola": { "command": "/ABSOLUTE/PATH/Granola-Download/mcp_server/run.sh" } } }
 ```
 
-## MCP Server (local stdio)
+**Codex** — add to `~/.codex/config.toml`:
 
-Expose your transcript archive to MCP clients (e.g. Claude Code) as a local
-stdio server. It reads the local archive for search/get/list and can refresh it
-on demand. **Credentials are handled internally** — `sync` re-extracts a fresh
-token from the Granola app and downloads; no tool ever returns secrets.
-
-Tools: `list_meetings`, `search_transcripts`, `get_transcript`, `sync`,
-`archive_stats`.
-
-Runs under [uv](https://docs.astral.sh/uv/) (auto-fetches Python 3.11 + the
-`mcp` SDK — no extra venv to manage):
-
-```bash
-# Run standalone
-./mcp_server/run.sh
-
-# Register with Claude Code (user scope)
-claude mcp add granola --scope user -- /absolute/path/to/mcp_server/run.sh
+```toml
+[mcp_servers.granola]
+command = "/ABSOLUTE/PATH/Granola-Download/mcp_server/run.sh"
+args = []
 ```
 
-The `sync` tool shells out to `pull.py` using the repo's `.venv`, so make sure
-the manual install above has been done once.
+Restart the app afterward.
+</details>
+
+---
 
 ## Output
 
 ```
-output/
-├── {document_id}/
-│   ├── transcript.json        # Raw transcript data
-│   ├── transcript.md          # Formatted readable transcript
+transcripts_output/
+├── 2026-06-04_1538_Eigen Layer strategy_ccbb2f18/
+│   ├── transcript.md            # formatted, readable transcript
+│   ├── transcript.json          # raw transcript data
 │   └── transcript_metadata.json
-└── transcripts_index.json     # Summary of all downloads
+└── transcripts_index.json       # summary of the run
 ```
 
-The full export (`main.py`) also includes `document.json`, `metadata.json`, and `resume.md` (AI-generated notes) per document.
+### Full export (notes + AI summaries)
 
-## Authentication
+For a complete export including AI-generated notes and workspace/folder metadata:
 
-The tool reads tokens directly from the Granola desktop app's local storage (`~/Library/Application Support/Granola/supabase.json`). No manual configuration needed for most users.
+```bash
+python3 granola/main.py ./my-export   # adds document.json, metadata.json, resume.md per meeting
+```
 
-If you prefer manual setup, see the [Setup Guide](docs/SETUP.md).
+### Browse / filter
+
+```bash
+python3 granola/list_workspaces.py
+python3 granola/list_folders.py
+python3 granola/filter_by_folder.py ./my-export --folder-name "Sales"
+```
+
+### Downloader options
+
+```
+python3 granola/download_transcripts.py OUTPUT_DIR [options]
+  --overwrite          Re-download existing transcripts
+  --batch-size N       Documents per batch request (default: 100)
+  --page-size N        Documents per page (default: 100)
+  --folder-name MODE   id | title | title-id | date-title | date-title-id | date-id
+  --timeout N          HTTP timeout in seconds (default: 30)
+```
+
+---
+
+## How it works / troubleshooting
+
+- **Auth:** tokens are decrypted from the Granola app's local storage
+  (`storage.dek` + `supabase.json.enc`) via your macOS keychain. See
+  [`extract_config.py`](extract_config.py) and the [Setup Guide](docs/SETUP.md).
+- **"Failed to obtain access token" / HTTP 400:** the saved token went stale.
+  Just re-run `pull.py` — it re-extracts a fresh one. If extraction itself
+  fails, make sure the Granola app is installed and logged in.
+- **Your data stays private:** `config.json`, `transcripts_output/`, and
+  `.venv/` are gitignored and never committed.
 
 ## Documentation
 
-- [Setup Guide](docs/SETUP.md) — Manual configuration and troubleshooting
-- [API Reference](docs/API_REFERENCE.md) — Endpoint documentation
+- [Setup Guide](docs/SETUP.md) — manual configuration and troubleshooting
+- [API Reference](docs/API_REFERENCE.md) — endpoint documentation
 - [Contributing](CONTRIBUTING.md)
 
 ## Credits
 
-This work builds on research by [Joseph Thacker](https://josephthacker.com/hacking/2025/05/08/reverse-engineering-granola-notes.html).
+Builds on research by [Joseph Thacker](https://josephthacker.com/hacking/2025/05/08/reverse-engineering-granola-notes.html).
 
 ## License
 
